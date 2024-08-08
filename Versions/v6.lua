@@ -618,7 +618,8 @@ local function encodeModel(model, _stringify) --[[ v6 ]]
 		if not gotBase then error("Couldn't create a blank "..tostring(blob.class).."! Make sure your model doesn't contain uncreatable instances such as services, Tweens, or other instances which cannot be made under Instance.new()!") end
 		base = gotBase and base
 
-		local function getValue(ki,kv)
+		local getValue
+		function getValue(ki,kv)
 			local function L(x) return math.round(x*1000)/1000 end
 			if type(kv)=="userdata" or type(kv)=="vector" then
 				if typeof(kv) == "EnumItem" then
@@ -641,7 +642,7 @@ local function encodeModel(model, _stringify) --[[ v6 ]]
 				elseif typeof(kv) == "ColorSequence" then
 					local sequence = "ColorSequence.new({\n"
 					for i,v in ipairs(kv.Keypoints) do
-						sequence = sequence .. ("	ColorSequenceKeypoint.new(%s, %s)"):format(v.Time, getValue(v.Value)) .. (i < #kv.Keypoints and ',' or '') .. "\n"
+						sequence = sequence .. ("	ColorSequenceKeypoint.new(%s, %s)"):format(v.Time, getValue(nil,v.Value)) .. (i < #kv.Keypoints and ',' or '') .. "\n"
 					end
 					sequence = sequence .. "})"
 					return sequence
@@ -655,6 +656,15 @@ local function encodeModel(model, _stringify) --[[ v6 ]]
 
 				elseif typeof(kv) == "Vector2" then
 					return ("Vector2.new(%s, %s)"):format(L(kv.X), L(kv.Y))
+
+				elseif typeof(kv) == "UDim" then
+					return ("UDim.new(%s, %s)"):format(L(kv.Scale), L(kv.Offset))
+
+				elseif typeof(kv) == "UDim2" then
+					return ("UDim2.new(%s,%s, %s,%s)"):format(L(kv.X.Scale),L(kv.X.Offset), L(kv.Y.Scale),L(kv.Y.Offset))
+
+				elseif typeof(kv) == "Font" then
+					return ("Font.new(%s, %s, %s)"):format(getValue(nil,kv.Family), getValue(nil,kv.Weight), getValue(nil,kv.Style))
 
 				elseif typeof(kv) == "Instance" then
 					if codevars[kv] then
