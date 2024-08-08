@@ -589,17 +589,17 @@ local function encodeModel(model, _stringify) --[[ v6 ]]
 	local ordervars = {}	-- [int]: instance					| "The order of variables made, mandatory for properly assembling the final code."
 	local modelcode = {}	-- [instance]: block of code		| "Blocks of code for each instance, indexed by their respective instance."
 	local codevars = {}		-- [instance]: code-safe name		| "The variables names for instances, such that the code isn't broken."
-	local usedvars = {}		-- [instance]: # of same-name vars	| "The counters for all variable names, so that same-name instances don't conflict."
+	local usedvars = {}		-- [string]: # of same-name vars	| "The counters for all variable names, so that same-name instances don't conflict."
 	local queuedvars = {}	-- [instance]: block of var code	| "Blocks of code waiting for their required instance to be initialized."
 	local function getCodeSafeName(inst)
-		usedvars[inst] = (usedvars[inst] or 0) + 1
 		local name
 		if codevars[inst] then
 			name = codevars[inst]
 		else
 			name = inst.Name:gsub(" +", "_"):gsub("[^a-zA-Z_]+", ""):gsub("_+", "_")
 			if name:sub(1,1):match('%d') then name = "_"..name end
-			if usedvars[inst] > 1 then name = name .. usedvars[inst] end
+			usedvars[inst.Name] = (usedvars[inst.Name] or 0) + 1
+			if usedvars[inst.Name] > 1 then name = name .. usedvars[inst.Name] end
 			codevars[inst] = name
 		end
 		return name
