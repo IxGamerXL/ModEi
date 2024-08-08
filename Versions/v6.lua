@@ -597,9 +597,10 @@ local function encodeModel(model, _stringify) --[[ v6 ]]
 			name = codevars[inst]
 		else
 			name = inst.Name:gsub(" +", "_"):gsub("[^a-zA-Z_]+", ""):gsub("_+", "_")
+			local unog = name
 			if name:sub(1,1):match('%d') then name = "_"..name end
-			usedvars[inst.Name] = (usedvars[inst.Name] or 0) + 1
-			if usedvars[inst.Name] > 1 then name = name .. usedvars[inst.Name] end
+			usedvars[unog] = (usedvars[unog] or 0) + 1
+			if usedvars[unog] > 1 then name = name .. usedvars[unog] end
 			codevars[inst] = name
 		end
 		return name
