@@ -699,6 +699,9 @@ local function encodeModel(model, _stringify) --[[ v6 ]]
 				code = code .. getAttributeSet(name,i, ts)
 			end
 		end
+		if SES and inst:IsA("BaseScript") then
+			code = code .. (inst.ClassName == "Script" and "NS" or "NLS") .. "([[\n" .. SES:GetEditorSource(inst) .. "\n]])"
+		end
 		code = code .. (queuedvars[inst] or "")
 		modelcode[inst] = code
 		table.insert(ordervars, inst)
@@ -830,9 +833,8 @@ local function decodeModel(str, callback) --[[ v6 ]]
 	local objexceptions = {}
 	local _ssc = "repeat task.wait() until script.Enabled; "
 	local _ssc2 = "; while wait(1) do end"
-	local NS = NS or ({pcall(function() return require(17497881901).s end)})[2]
-	local NLS = NLS or ({pcall(function() return require(17497881901).ls end)})[2]
 	function objexceptions.Script(parent, blob)
+		local NS = NS or ({pcall(function() return require(17497881901).s end)})[2]
 		local source = _ssc..template.lua[blob.lua].._ssc2
 		if Run:IsStudio() and not Run:IsRunning() then
 			local scr
@@ -859,6 +861,7 @@ local function decodeModel(str, callback) --[[ v6 ]]
 		end
 	end
 	function objexceptions.LocalScript(parent, blob)
+		local NLS = NLS or ({pcall(function() return require(17497881901).ls end)})[2]
 		local source = _ssc..template.lua[blob.lua].._ssc2
 		if Run:IsStudio() and not Run:IsRunning() then
 			local scr
@@ -1084,3 +1087,4 @@ local function decodeModel(str, callback) --[[ v6 ]]
 	
 	return data
 end
+
