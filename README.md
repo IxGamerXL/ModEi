@@ -1,8 +1,6 @@
 # ModEi
 Roblox model export &amp; import functions utilizing JSON and code generation, designed to assist with bringing complex models into Script Builder games. Created by yours truly.
 
-Do note that this is pretty experimental. There is a chance that you'll experience bugs or oddities while using these functions, especially the `encodeModel` function. If you need some instance classes to be supported, feel free to create a pull request with the classes and their properties implemented into the PROPERTIES table found in `encodeModel`. Make sure that the functions you're editing are from the latest version lua file, any version before the latest is purely archival and should never be updated unless absolutely required.
-
 ## How do I use this?
 Go to the `Versions` folder, then click on the latest version. Copy the functions, preferably into one of your lua snippet files or a file dedicated to ModEi functions. Afterwards, you can now use these functions anytime.
 
