@@ -51,6 +51,11 @@ local function encodeModel(model, _stringify) --[[ v6 ]]
 				"Enabled",
 			}
 		},
+		["Accessory"] = {
+			"_CLASS",
+			"AccessoryType",
+			"AttachmentPoint",
+		},
 		["Humanoid"] = {
 			"_CLASS",
 
@@ -113,8 +118,13 @@ local function encodeModel(model, _stringify) --[[ v6 ]]
 			["Part"] = {"Shape"},
 			["&WedgePart,CornerWedgePart,TrussPart,Seat,VehicleSeat"] = {"_CLASS"},
 
-			["&MeshPart,UnionOperation"] = function(v, blob)
-				warn(v:GetFullName(), "cannot be exported completely. Make sure you aren't trying to export MeshParts or UnionOperations!")
+			["MeshPart"] = {
+				"_CLASS",
+				"TextureID",
+				function(v, blob) blob.mesh = {id=v.MeshId, collision=v.CollisionFidelity.Value, render=v.RenderFidelity.Value} end,
+			},
+			["UnionOperation"] = function(v, blob)
+				warn(v:GetFullName(), "cannot be exported completely. Make sure you aren't trying to export UnionOperations!")
 			end,
 		},
 		["SpecialMesh"] = {
@@ -180,6 +190,27 @@ local function encodeModel(model, _stringify) --[[ v6 ]]
 			"TimeScale",
 			"VelocityInheritance",
 			"WindAffectsDrag",
+		},
+		["Trail"] = {
+			"_CLASS",
+			"Brightness",
+			"Color",
+			"FaceCamera",
+			"LightEmission",
+			"LightInfluence",
+			"Texture",
+			"TextureLength",
+			"TextureMode",
+			"Transparency",
+			
+			"Attachment0",
+			"Attachment1",
+			
+			"Enabled",
+			"Lifetime",
+			"MaxLength",
+			"MinLength",
+			"WidthScale"
 		},
 		["LayerCollector"] = {
 			"_CLASS",
@@ -403,8 +434,9 @@ local function encodeModel(model, _stringify) --[[ v6 ]]
 				"MinTextSize",
 			},
 		},
+		
 		-- I'm tired of having to declare all of these properties, so I'm going for the lazy route.
-		["Constraint"] = {
+		["&NoCollisionConstraint,WeldConstraint,Constraint"] = {
 			"_CLASS",
 			"Color",
 			"Visible",
@@ -492,6 +524,15 @@ local function encodeModel(model, _stringify) --[[ v6 ]]
 				"Part1",
 			}
 		},
+		["BodyGyro"] = {
+			"_CLASS",
+			
+			"CFrame",
+			"D",
+			"MaxTorque",
+			"P"
+		},
+		
 		["Weld"] = {
 			"_CLASS",
 
@@ -516,6 +557,7 @@ local function encodeModel(model, _stringify) --[[ v6 ]]
 		-- This requires encoding the model in Studio, as it gets the script contents.
 		["BaseScript"] = {
 			"_CLASS",
+			"Enabled",
 
 			function(inst, blob)
 				if Run:IsRunning() or not Run:IsStudio() then
@@ -524,7 +566,6 @@ local function encodeModel(model, _stringify) --[[ v6 ]]
 				end
 				table.insert(data.lua, SES:GetEditorSource(inst))
 				blob.lua = #data.lua
-				blob.p.Enabled = inst.Enabled
 				print(inst, blob)
 			end,
 
@@ -725,10 +766,19 @@ local function encodeModel(model, _stringify) --[[ v6 ]]
 		end
 
 		local code
-		if depth > 1 then
-			code = ("local %s = Instance.new(\"%s\", %s)"):format(name, blob.class, getCodeSafeName(inst.Parent)) .. (blob.class == 'Folder' and inst.ClassName ~= blob.class and " -- Original class wasn't supported!" or "") .. "\n"
+		local function noVerbose()
+			return ((blob.class == 'Folder' and inst.ClassName ~= blob.class) and " -- This class isn't currently supported by ModEi."
+				or "") .. "\n"
+		end
+		local function getLuaContent() return SES and SES:GetEditorSource(inst):gsub(']]', '\\]\\]') or '-- Script source unavailable; please export via Studio.' end
+		if inst:IsA("BaseScript") and SES then
+			code = ("local %s = %s([[%s]], %s)"):format(name, inst:IsA("LocalScript") and 'NLS' or 'NS', getLuaContent(), depth>1 and getCodeSafeName(inst.Parent) or "Instance.new(\"Folder\")") .. noVerbose()
+		elseif inst:IsA("MeshPart") and SES then
+			code = ("local %s = game:GetService(\"InsertService\"):CreateMeshPartAsync(\"%s\", %d,%d)"):format(name, blob.mesh.id, blob.mesh.collision,blob.mesh.render) .. (depth > 1 and ("\n%s.Parent = %s"):format(name, getCodeSafeName(inst.Parent)) or "") .. noVerbose()
+		elseif depth > 1 then
+			code = ("local %s = Instance.new(\"%s\", %s)"):format(name, blob.class, getCodeSafeName(inst.Parent)) .. noVerbose()
 		else
-			code = ("local %s = Instance.new(\"%s\")"):format(name, blob.class) .. (blob.class == 'Folder' and inst.ClassName ~= blob.class and " -- Original class wasn't supported!" or "") .. "\n"
+			code = ("local %s = Instance.new(\"%s\")"):format(name, blob.class) .. noVerbose()
 		end
 		for i,v in pairs(blob.p) do
 			local ts = getValue(i,v)
@@ -741,9 +791,6 @@ local function encodeModel(model, _stringify) --[[ v6 ]]
 			if ts then
 				code = code .. getAttributeSet(name,i, ts)
 			end
-		end
-		if SES and inst:IsA("BaseScript") then
-			code = code .. (inst.ClassName == "Script" and "NS" or "NLS") .. "([[\n" .. SES:GetEditorSource(inst) .. "\n]])"
 		end
 		code = code .. (queuedvars[inst] or "")
 		modelcode[inst] = code
@@ -866,6 +913,7 @@ end
 
 local function decodeModel(str, callback) --[[ v6 ]]
 	local Http = game:GetService("HttpService")
+	local Insert = game:GetService("InsertService")
 	local _gotSES,SES = pcall(function() return game:GetService("ScriptEditorService") end)
 	SES = _gotSES and SES
 	local Run = game:GetService("RunService")
@@ -874,8 +922,8 @@ local function decodeModel(str, callback) --[[ v6 ]]
 	assert(template.version == version, "Version Compatibility Error: Decoder v"..tostring(version).." cannot parse model v"..tostring(template.version)..". Make sure the model is using a same-version encoder!")
 	
 	local objexceptions = {}
-	local _ssc = "repeat task.wait() until script.Enabled; "
-	local _ssc2 = "; while wait(1) do end"
+	local _ssc = "while not script.Enabled do task.wait() end\n"
+	local _ssc2 = "\nwhile wait(1) do end"
 	function objexceptions.Script(parent, blob)
 		local NS = NS or ({pcall(function() return require(17497881901).s end)})[2]
 		local source = _ssc..template.lua[blob.lua].._ssc2
@@ -883,7 +931,6 @@ local function decodeModel(str, callback) --[[ v6 ]]
 			local scr
 			local s,e = pcall(function()
 				scr = Instance.new("Script", parent)
-				scr.Enabled = false
 				SES:UpdateSourceAsync(scr, function() return source end)
 			end)
 			if not s then
@@ -910,12 +957,12 @@ local function decodeModel(str, callback) --[[ v6 ]]
 			local scr
 			local s,e = pcall(function()
 				scr = Instance.new("LocalScript", parent)
-				scr.Enabled = false
 				SES:UpdateSourceAsync(scr, function() return source end)
 			end)
 			if not s then
 				warn("SCRIPT-CREATION-FAULT; "..e)
 			end
+			return scr
 		else
 			local scr
 			local s,e = pcall(function()
@@ -928,6 +975,11 @@ local function decodeModel(str, callback) --[[ v6 ]]
 			end
 			return scr
 		end
+	end
+	function objexceptions.MeshPart(parent, blob)
+		local part = Insert:CreateMeshPartAsync(blob.mesh.id, blob.mesh.collision,blob.mesh.render)
+		part.Parent = parent
+		return part
 	end
 	
 	local tn = tonumber
@@ -1130,4 +1182,3 @@ local function decodeModel(str, callback) --[[ v6 ]]
 	
 	return data
 end
-
