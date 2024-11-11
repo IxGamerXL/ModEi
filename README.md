@@ -367,5 +367,5 @@ Also, you will need to make sure the environment you want to use the export in s
 
 ## Some of the instance classes/properties I use aren't supported!
 You may create an issue to request that classes and properties are supported. However, not all classes/properties can be supported. Please refrain from requesting support for these classes unless you have a method to work around their restrictions.
-- [**UnionOperation**](https://create.roblox.com/docs/reference/engine/classes/UnionOperation) : Cannot be deconstructed via scripts. If you _really_ need Unions, you should separate your unions into individual parts and unionize them after they are imported into your script.
-- [**SurfaceAppearance**](https://create.roblox.com/docs/reference/engine/classes/SurfaceAppearance) : Cannot be modified by scripts.
+- **[UnionOperation](https://create.roblox.com/docs/reference/engine/classes/UnionOperation)** : Cannot be deconstructed via scripts. If you _really_ need Unions, you should separate your unions into individual parts before exporting and unionize them after they are imported into your script.
+- **[SurfaceAppearance](https://create.roblox.com/docs/reference/engine/classes/SurfaceAppearance)** : Cannot be modified by scripts.
