@@ -51,11 +51,59 @@ local function encodeModel(model, _stringify) --[[ v6 ]]
 				"Enabled",
 			}
 		},
+		
 		["Accessory"] = {
 			"_CLASS",
 			"AccessoryType",
 			"AttachmentPoint",
 		},
+		["HumanoidDescription"] = {
+			"_CLASS",
+			
+			"ClimbAnimation",
+			"FallAnimation",
+			"IdleAnimation",
+			"JumpAnimation",
+			"MoodAnimation",
+			"RunAnimation",
+			"SwimAnimation",
+			"WalkAnimation",
+			
+			"Face",
+			"GraphicTShirt",
+			"Pants",
+			"Shirt",
+			
+			"BodyTypeScale",
+			"DepthScale",
+			"HeadScale",
+			"HeightScale",
+			"ProportionScale",
+			"WidthScale"
+		},
+		["AccessoryDescription"] = {
+			"_CLASS",
+			
+			"AccessoryType",
+			"AssetId",
+			"Instance",
+			"IsLayered",
+			"Order",
+			
+			"Position",
+			"Puffiness",
+			"Rotation",
+			"Scale"
+		},
+		["BodyPartDescription"] = {
+			"_CLASS",
+			
+			"AssetId",
+			"BodyPart",
+			"Color",
+			"Instance"
+		},
+		
 		["Humanoid"] = {
 			"_CLASS",
 
